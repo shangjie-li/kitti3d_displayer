@@ -1,5 +1,7 @@
 # kitti3d_displayer
 
+A Python tool for displaying KITTI3D dataset
+
 ## Requirements
  - Clone this repository
    ```
