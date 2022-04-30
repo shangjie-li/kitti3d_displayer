@@ -1,18 +1,12 @@
 import os
 import numpy as np
 import open3d
+import matplotlib.pyplot as plt
 from pathlib import Path
 
 import box_utils
 import calibration_kitti
 import object3d_kitti
-
-try:
-    import cv2
-except:
-    import sys
-    sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
-    import cv2
 
 classes = ['Car', 'Pedestrian', 'Cyclist']
 
@@ -87,16 +81,13 @@ def get_colored_points_in_fov(pts, calib, img):
     """
     
     img_h, img_w, _ = img.shape
-    img_rgb = img[:, :, ::-1] # To RGB
-    
     pts_fov = get_points_in_fov(pts, calib, img_h, img_w) # [N', 4]
     pts_rect = calib.lidar_to_rect(pts_fov[:, 0:3])
     pts_fov_img, pts_fov_rect_depth = calib.rect_to_img(pts_rect) # [N', 2], [N']
     
     pts_fov_img = pts_fov_img.astype(np.int)
-    pts_rgb = img_rgb[pts_fov_img[:, 1], pts_fov_img[:, 0], :] / 255.0 # [N', 3]
+    pts_rgb = img[pts_fov_img[:, 1], pts_fov_img[:, 0], :] # [N', 3]
     pts_fov_colored = np.concatenate([pts_fov, pts_rgb], axis=1)
-    
     return pts_fov_colored
 
 if __name__ == '__main__':
@@ -105,7 +96,7 @@ if __name__ == '__main__':
     
     img_path = os.path.join(root_path, 'image_2', image_id + '.png')
     assert Path(img_path).exists(), 'Not Found: %s' % img_path
-    img = cv2.imread(img_path)
+    img = plt.imread(img_path)
     
     pts_path = os.path.join(root_path, 'velodyne', image_id + '.bin')
     assert Path(pts_path).exists(), 'Not Found: %s' % pts_path
@@ -147,13 +138,12 @@ if __name__ == '__main__':
     
     vis = open3d.visualization.Visualizer()
     vis.create_window(window_name='points', width=800, height=600)
-    vis.get_render_option().point_size = 2.0
-    vis.get_render_option().background_color = np.asarray([0.2, 0.2, 0.2])
+    vis.get_render_option().point_size = 1.0
+    vis.get_render_option().background_color = np.asarray([0.4, 0.4, 0.4])
     
     pts_fov_colored = get_colored_points_in_fov(pts, calib, img) # [N', 7]
     points = pts_fov_colored[:, :3] # [N', 3]
     colors = pts_fov_colored[:, 4:] # [N', 3]
-    
     colors = np.array(([1.0, 1.0, 1.0]))[None, :].repeat(points.shape[0], axis=0)
     
     pts = open3d.geometry.PointCloud()
